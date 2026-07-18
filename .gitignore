@@ -1,0 +1,22 @@
+# Claude files
+claude.md
+project.md
+
+# Environment variables
+.env
+.env.local
+.env.*
+
+# Dependencies
+node_modules
+
+# Build
+dist
+build
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
