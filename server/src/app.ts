@@ -1,7 +1,25 @@
-// Express app — middleware + routes only, NO app.listen here.
-// Separating app from server lets tests import the app without opening a port.
-// TODO (you): create express(), add cors({ origin: env.CLIENT_URL }),
-// express.json(), mount auth routes at /api/auth, add a GET /api/health
-// route, and mount error.middleware LAST. Export the app.
 
-export {}
+import express from "express";
+import cors from "cors";
+import { env } from "./config/env.js";
+
+const app = express();
+
+// Middleware
+app.use(
+  cors({
+    origin: env.clientUrl
+  })
+);
+
+app.use(express.json());
+
+// Health Check Route
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "HRMS API is running 🚀",
+  });
+});
+
+export default app;

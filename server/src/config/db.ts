@@ -1,5 +1,16 @@
-// MongoDB connection
-// TODO (you): export an async connectDB() that calls mongoose.connect(env.MONGO_URI),
-// logs success, and exits the process on failure (fail fast at startup).
+import mongoose from "mongoose";
+import { env } from "./env.js";
 
-export {}
+const connectDB = async (): Promise<void> => {
+  try {
+    await mongoose.connect(env.mongoUri);
+
+    console.log("✅ MongoDB Connected Successfully");
+  } catch (error) {
+    console.error("❌ MongoDB Connection Failed:", error);
+
+    process.exit(1);
+  }
+};
+
+export default connectDB;
