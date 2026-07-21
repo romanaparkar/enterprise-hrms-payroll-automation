@@ -1,5 +1,11 @@
-// Auth routes
-// TODO (you): express.Router() with POST /register and POST /login,
-// mounted in app.ts under /api/auth.
+// Auth routes — maps URLs to controller functions.
+// Mounted under /api/auth in app.ts, so this becomes POST /api/auth/register.
 
-export {}
+import { Router } from "express";
+import { register } from "../controllers/auth.controller.js";
+
+const router = Router();
+
+router.post("/register", register);
+
+export default router;
