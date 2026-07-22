@@ -1,66 +1,88 @@
-// Auth HTTP layer — thin. Reads the request, calls the service,
-// shapes the HTTP response. No business logic lives here.
+// Auth HTTP layer — thin. Reads the request, calls the service, shapes the
+// response. Wrapped in asyncHandler, so thrown errors go to the error
+// middleware; no try/catch needed here.
 
 import type { Request, Response } from "express";
-import { registerUser } from "../services/auth.service.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { registerUser, loginUser } from "../services/auth.service.js";
+import User from "../models/user.model.js";
 
 /**
  * POST /api/auth/register
- * Body: { name, email, password, role? }
+ * Body: { name, email, password }
  */
-export const register = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { name, email, password, role } = req.body ?? {};
+export const register = asyncHandler(async (req: Request, res: Response) => {
+  const { name, email, password } = req.body ?? {};
 
-    // Presence validation — fast, before we touch the database.
-    if (!name || !email || !password) {
-      res.status(400).json({
-        success: false,
-        message: "Name, email and password are required",
-      });
-      return;
-    }
+  if (!name || !email || !password) {
+    throw new ApiError(400, "Name, email and password are required");
+  }
 
-    const user = await registerUser({ name, email, password, role });
+  const { user, token } = await registerUser({ name, email, password });
 
-    // 201 Created. Note: password is absent because the schema uses
-    // select: false, so it is never part of the returned document.
-    res.status(201).json({
-      success: true,
-      message: "User registered successfully",
-      data: {
+  res.status(201).json({
+    success: true,
+    message: "User registered successfully",
+    data: {
+      token,
+      user: {
         id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
       },
-    });
-  } catch (error) {
-    const err = error as Error & { statusCode?: number };
+    },
+  });
+});
 
-    // Known business error (e.g. duplicate email → 409).
-    if (err.statusCode) {
-      res.status(err.statusCode).json({
-        success: false,
-        message: err.message,
-      });
-      return;
-    }
+/**
+ * POST /api/auth/login
+ * Body: { email, password }
+ */
+export const login = asyncHandler(async (req: Request, res: Response) => {
+  const { email, password } = req.body ?? {};
 
-    // Mongoose schema validation error (e.g. bad email format, short password).
-    if (err.name === "ValidationError") {
-      res.status(400).json({
-        success: false,
-        message: err.message,
-      });
-      return;
-    }
-
-    // Anything unexpected → 500, and log it for the developer.
-    console.error("Register error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong. Please try again later.",
-    });
+  if (!email || !password) {
+    throw new ApiError(400, "Email and password are required");
   }
-};
+
+  const { user, token } = await loginUser({ email, password });
+
+  res.status(200).json({
+    success: true,
+    message: "Login successful",
+    data: {
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    },
+  });
+});
+
+/**
+ * GET /api/auth/me  (protected)
+ * Returns the currently authenticated user. Demonstrates the protect
+ * middleware: req.user is populated from the verified token.
+ */
+export const getMe = asyncHandler(async (req: Request, res: Response) => {
+  // protect guarantees req.user exists by the time we get here.
+  const user = await User.findById(req.user!.userId);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  res.status(200).json({
+    success: true,
+    data: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+  });
+});

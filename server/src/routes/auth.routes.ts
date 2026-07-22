@@ -1,11 +1,16 @@
 // Auth routes — maps URLs to controller functions.
-// Mounted under /api/auth in app.ts, so this becomes POST /api/auth/register.
+// Mounted under /api/auth in app.ts.
 
 import { Router } from "express";
-import { register } from "../controllers/auth.controller.js";
+import { register, login, getMe } from "../controllers/auth.controller.js";
+import { protect } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
 router.post("/register", register);
+router.post("/login", login);
+
+// Protected: requires a valid Bearer token.
+router.get("/me", protect, getMe);
 
 export default router;

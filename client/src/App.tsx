@@ -1,9 +1,18 @@
+import { BrowserRouter } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { ToastProvider } from "./context/ToastContext";
+import AppRoutes from "./routes/AppRoutes";
+
 function App() {
   return (
-    <h1 className="text-3xl font-bold text-blue-600">
-      HRMS Dashboard — Tailwind is working
-    </h1>
-  )
+    <BrowserRouter>
+      <AuthProvider>
+        <ToastProvider>
+          <AppRoutes />
+        </ToastProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
